@@ -2,7 +2,7 @@ name: Weather Screenshots
 
 on:
   schedule:
-    - cron: '53 * * * *'  # Runs every hour at minute 53 (UTC; adjust if needed, e.g., '48 * * * *' for CST :53)
+    - cron: '53 * * * *'  # Runs every hour at minute 53 (UTC; adjust if needed)
   workflow_dispatch:  # Allows manual testing
 
 jobs:
@@ -31,9 +31,17 @@ jobs:
     - name: Run screenshot script
       run: python WeatherWX.py
 
-    - name: Upload screenshots as artifact
-      uses: actions/upload-artifact@v4
+    - name: Create GitHub Release with Screenshots
+      uses: softprops/action-gh-release@v2
       with:
-        name: weather-screenshots-${{ github.run_number }}  # ZIP name with run ID
-        path: screenshots/  # Uploads your screenshots folder
-        retention-days: 7  # Keeps for 7 days
+        tag_name: hourly-run-${{ github.run_number }}  # Unique tag per run (e.g., hourly-run-5)
+        name: Screenshots - ${{ github.run_number }} (${{ github.run_id }})  # Release title with run info
+        body: |
+          Hourly weather screenshots captured at :53/:03 UTC.
+          - Wunderground: [link to image]
+          - NWS OBS: [link to image]
+        draft: false
+        prerelease: false
+        files: screenshots/*.png  # Attaches both PNGs to the release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Built-in, no setup needed
