@@ -1,0 +1,39 @@
+name: Weather Screenshots
+
+on:
+  schedule:
+    - cron: '53 * * * *'  # Runs every hour at minute 53 (UTC; adjust if needed, e.g., '48 * * * *' for CST :53)
+  workflow_dispatch:  # Allows manual testing
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4  # Downloads your repo code
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Python dependencies
+      run: |
+        pip install selenium webdriver-manager pillow
+
+    - name: Install Chrome (for Selenium)
+      run: |
+        sudo apt-get update
+        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+        sudo apt-get update
+        sudo apt-get install google-chrome-stable -y
+
+    - name: Run screenshot script
+      run: python screenshot_app.py
+
+    - name: Upload screenshots as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: weather-screenshots-${{ github.run_number }}  # ZIP name with run ID
+        path: screenshots/  # Uploads your screenshots folder
+        retention-days: 7  # Keeps for 7 days
