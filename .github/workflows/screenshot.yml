@@ -2,7 +2,7 @@ name: Weather Screenshots
 
 on:
   schedule:
-    - cron: '53 * * * *'  # Runs every hour at minute 53 (UTC; adjust if needed)
+    - cron: '42 * * * *'  # Runs every hour at minute 53 (UTC; adjust if needed)
   workflow_dispatch:  # Allows manual testing
 
 jobs:
