@@ -12,9 +12,9 @@ from PIL import Image, ImageDraw, ImageFont  # For adding timestamp overlay
 
 # Configuration
 URL1 = "https://forecast.weather.gov/MapClick.php?lon=-93.222&lat=44.884"  # weather.gov (at exact :03)
-URL2 = "https://www.wunderground.com/wundermap?lat=44.882&lon=-93.222&zoom=13"  # Wunderground (immediate)
+URL2 = "https://www.wunderground.com/wundermap?lat=44.882&lon=-93.222&zoom=12.5"  # Wunderground (immediate)
 SCREENSHOT_DIR = "./screenshots"  # Folder for GitHub Actions
-SCROLL_AMOUNT = 400  # Pixels to scroll down for URL1
+SCROLL_AMOUNT = 350  # Pixels to scroll down for URL1
 
 # Create screenshots folder if it doesn't exist
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
