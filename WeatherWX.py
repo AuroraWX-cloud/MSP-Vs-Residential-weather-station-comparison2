@@ -1,5 +1,6 @@
 # Modified for GitHub Actions: Single cycle (URL2 -> 10 min wait -> URL1)
 # Screenshots save to ./screenshots/ folder.
+# Updates: Custom filenames with human-readable datetime (e.g., "Wunderground 2025-11-04 14:00:00.png")
 
 import time
 import os
@@ -66,8 +67,9 @@ def take_screenshot(url, prefix, scroll=0, add_overlay=False):
             driver.execute_script(f"window.scrollTo(0, {scroll});")
             time.sleep(1)
         
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{prefix}_{timestamp}.png"
+        # Generate human-readable timestamp for filename
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        filename = f"{prefix} {timestamp}.png"
         filepath = f"{SCREENSHOT_DIR}/{filename}"
         
         driver.save_screenshot(filepath)
@@ -84,14 +86,14 @@ def take_screenshot(url, prefix, scroll=0, add_overlay=False):
 
 if __name__ == "__main__":
     print("Starting single cycle: URL2 (Wunderground) -> 10 min wait -> URL1 (weather.gov)")
-    # Take URL2 first (with overlay)
-    take_screenshot(URL2, "screenshot2", add_overlay=True)
+    # Take URL2 first (with overlay; filename: "Wunderground YYYY-MM-DD HH:MM:SS.png")
+    take_screenshot(URL2, "Wunderground", add_overlay=True)
     
     # Wait 10 minutes
     print("Waiting 10 minutes...")
     time.sleep(600)
     
-    # Take URL1 (with scroll)
-    take_screenshot(URL1, "screenshot1", scroll=SCROLL_AMOUNT)
+    # Take URL1 (with scroll; filename: "NWS OBS YYYY-MM-DD HH:MM:SS.png")
+    take_screenshot(URL1, "NWS OBS", scroll=SCROLL_AMOUNT)
     
     print("Cycle complete. Check ./screenshots/ for files.")
