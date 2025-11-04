@@ -1,10 +1,9 @@
-# Modified for GitHub Actions: Single cycle (URL2 -> 10 min wait -> URL1)
-# Screenshots save to ./screenshots/ folder.
-# Updates: Custom filenames with hyphenated datetime (e.g., "Wunderground 2025-11-04 14-00-00.png")
+# Modified for GitHub Actions: Single cycle (URL2 immediate -> precise sleep to :03 -> URL1)
+# Syncs second screenshot to exact :03:00 UTC to avoid drift.
 
 import time
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -12,8 +11,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 from PIL import Image, ImageDraw, ImageFont  # For adding timestamp overlay
 
 # Configuration
-URL1 = "https://forecast.weather.gov/MapClick.php?lon=-93.222&lat=44.884"  # weather.gov (taken after 10 min)
-URL2 = "https://www.wunderground.com/wundermap?lat=44.882&lon=-93.222&zoom=13"  # Wunderground (taken first)
+URL1 = "https://forecast.weather.gov/MapClick.php?lon=-93.222&lat=44.884"  # weather.gov (at exact :03)
+URL2 = "https://www.wunderground.com/wundermap?lat=44.882&lon=-93.222&zoom=13"  # Wunderground (immediate)
 SCREENSHOT_DIR = "./screenshots"  # Folder for GitHub Actions
 SCROLL_AMOUNT = 400  # Pixels to scroll down for URL1
 
@@ -85,15 +84,20 @@ def take_screenshot(url, prefix, scroll=0, add_overlay=False):
         driver.quit()
 
 if __name__ == "__main__":
-    print("Starting single cycle: URL2 (Wunderground) -> 10 min wait -> URL1 (weather.gov)")
-    # Take URL2 first (with overlay; filename: "Wunderground YYYY-MM-DD HH-MM-SS.png")
+    print("Starting single cycle: URL2 (Wunderground) immediate -> sync sleep to :03 -> URL1 (weather.gov)")
+    # Take URL2 first (with overlay)
     take_screenshot(URL2, "Wunderground", add_overlay=True)
     
-    # Wait 10 minutes
-    print("Waiting 10 minutes...")
-    time.sleep(600)
+    # Calculate precise sleep to next :03:00 UTC
+    now = datetime.utcnow()  # Use UTC for consistency with cron
+    target = now.replace(minute=3, second=0, microsecond=0)
+    if now >= target:
+        target += timedelta(hours=1)
+    wait_seconds = (target - now).total_seconds()
+    print(f"Syncing: Sleeping {wait_seconds/60:.1f} minutes to hit exact :03 UTC...")
+    time.sleep(wait_seconds)
     
-    # Take URL1 (with scroll; filename: "NWS OBS YYYY-MM-DD HH-MM-SS.png")
+    # Take URL1 (with scroll)
     take_screenshot(URL1, "NWS OBS", scroll=SCROLL_AMOUNT)
     
     print("Cycle complete. Check ./screenshots/ for files.")
