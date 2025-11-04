@@ -1,5 +1,5 @@
-# Modified for GitHub Actions: Single cycle (URL2 immediate -> precise sleep to :03 -> URL1)
-# Syncs second screenshot to exact :03:00 UTC to avoid drift.
+# Modified for GitHub Actions: Sync to exact :53 for URL2 -> exact 10 min later for URL1 at :03
+# Eliminates drift from workflow startup delays.
 
 import time
 import os
@@ -12,9 +12,9 @@ from PIL import Image, ImageDraw, ImageFont  # For adding timestamp overlay
 
 # Configuration
 URL1 = "https://forecast.weather.gov/MapClick.php?lon=-93.222&lat=44.884"  # weather.gov (at exact :03)
-URL2 = "https://www.wunderground.com/wundermap?lat=44.882&lon=-93.222&zoom=12.5"  # Wunderground (immediate)
+URL2 = "https://www.wunderground.com/wundermap?lat=44.882&lon=-93.222&zoom=12.5"  # Wunderground (at exact :53)
 SCREENSHOT_DIR = "./screenshots"  # Folder for GitHub Actions
-SCROLL_AMOUNT = 350  # Pixels to scroll down for URL1
+SCROLL_AMOUNT = 300  # Pixels to scroll down for URL1
 
 # Create screenshots folder if it doesn't exist
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
@@ -84,20 +84,30 @@ def take_screenshot(url, prefix, scroll=0, add_overlay=False):
         driver.quit()
 
 if __name__ == "__main__":
-    print("Starting single cycle: URL2 (Wunderground) immediate -> sync sleep to :03 -> URL1 (weather.gov)")
-    # Take URL2 first (with overlay)
+    print("Starting synced cycle: Wait to exact :53 UTC for URL2 -> exact 10 min to :03 for URL1")
+    
+    # Sync wait to next :53:00 UTC for Wunderground
+    now = datetime.utcnow()
+    target2 = now.replace(minute=53, second=0, microsecond=0)
+    if now > target2:
+        target2 += timedelta(hours=1)
+    wait_to_url2 = (target2 - now).total_seconds()
+    print(f"Syncing URL2: Sleeping {wait_to_url2/60:.1f} minutes to hit exact :53 UTC...")
+    time.sleep(wait_to_url2)
+    
+    # Take URL2 at exact ~:53 (with overlay)
     take_screenshot(URL2, "Wunderground", add_overlay=True)
     
-    # Calculate precise sleep to next :03:00 UTC
-    now = datetime.utcnow()  # Use UTC for consistency with cron
-    target = now.replace(minute=3, second=0, microsecond=0)
-    if now >= target:
-        target += timedelta(hours=1)
-    wait_seconds = (target - now).total_seconds()
-    print(f"Syncing: Sleeping {wait_seconds/60:.1f} minutes to hit exact :03 UTC...")
-    time.sleep(wait_seconds)
+    # Sync wait to next :03:00 UTC for NWS (exactly 10 min later)
+    now = datetime.utcnow()
+    target1 = now.replace(minute=3, second=0, microsecond=0)
+    if now > target1:
+        target1 += timedelta(hours=1)
+    wait_to_url1 = (target1 - now).total_seconds()
+    print(f"Syncing URL1: Sleeping {wait_to_url1/60:.1f} minutes to hit exact :03 UTC...")
+    time.sleep(wait_to_url1)
     
-    # Take URL1 (with scroll)
+    # Take URL1 at exact ~:03 (with scroll)
     take_screenshot(URL1, "NWS OBS", scroll=SCROLL_AMOUNT)
     
-    print("Cycle complete. Check ./screenshots/ for files.")
+    print("Synced cycle complete. Check ./screenshots/ for files.")
