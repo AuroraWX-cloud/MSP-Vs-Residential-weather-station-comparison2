@@ -1,9 +1,12 @@
-# Modified for GitHub Actions: Sync to exact :53 for URL2 -> exact 10 min later for URL1 at :03
+# Modified for GitHub Actions: Sync to exact :53 for URL2 -> exact 10 min to :03 for URL1
 # Eliminates drift from workflow startup delays.
+# Updates: Filenames in CST: "Wunderground mm-dd-yy hrpm" (e.g., "Wunderground 11-05-25 6pm")
+# Overlay on Wunderground: "Taken: YYYY-MM-DD hh:mm PM" in CST (12-hr format)
 
 import time
 import os
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo  # For CST timezone
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -12,21 +15,23 @@ from PIL import Image, ImageDraw, ImageFont  # For adding timestamp overlay
 
 # Configuration
 URL1 = "https://forecast.weather.gov/MapClick.php?lon=-93.222&lat=44.884"  # weather.gov (at exact :03)
-URL2 = "https://www.wunderground.com/wundermap?lat=44.882&lon=-93.222&zoom=12.5"  # Wunderground (at exact :53)
+URL2 = "https://www.wunderground.com/wundermap?lat=44.882&lon=-93.222&zoom=13"  # Wunderground (at exact :53)
 SCREENSHOT_DIR = "./screenshots"  # Folder for GitHub Actions
-SCROLL_AMOUNT = 300  # Pixels to scroll down for URL1
+SCROLL_AMOUNT = 400  # Pixels to scroll down for URL1
+CST_TZ = ZoneInfo("America/Chicago")  # Central Standard Time
 
 # Create screenshots folder if it doesn't exist
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 
 def add_timestamp_overlay(filepath):
     """
-    Adds a timestamp overlay to the screenshot image in the top-left corner.
+    Adds a timestamp overlay to the screenshot image in the top-left corner (CST time).
     """
     try:
         img = Image.open(filepath)
         draw = ImageDraw.Draw(img)
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cst_time = datetime.now(CST_TZ)
+        timestamp = cst_time.strftime("%Y-%m-%d %I:%M %p")  # e.g., "2025-11-05 06:20 PM"
         text = f"Taken: {timestamp}"
         try:
             font = ImageFont.truetype("arial.ttf", 24)
@@ -66,9 +71,10 @@ def take_screenshot(url, prefix, scroll=0, add_overlay=False):
             driver.execute_script(f"window.scrollTo(0, {scroll});")
             time.sleep(1)
         
-        # Generate human-readable timestamp for filename (hyphens for compatibility)
-        timestamp = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
-        filename = f"{prefix} {timestamp}.png"
+        # Generate CST timestamp for filename: mm-dd-yy hrpm (e.g., "11-05-25 6pm")
+        cst_time = datetime.now(CST_TZ)
+        timestamp_filename = cst_time.strftime("%m-%d-%y %I%p").lower().lstrip('0')  # "11-05-25 6pm" (strip leading 0 from hour)
+        filename = f"{prefix} {timestamp_filename}.png"
         filepath = f"{SCREENSHOT_DIR}/{filename}"
         
         driver.save_screenshot(filepath)
