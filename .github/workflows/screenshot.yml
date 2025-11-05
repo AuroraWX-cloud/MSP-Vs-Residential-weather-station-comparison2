@@ -2,7 +2,7 @@ name: Weather Screenshots
 
 on:
   schedule:
-    - cron: '51 * * * *'  # Your buffered cron
+    - cron: '30 * * * *'  # Your buffered cron
   workflow_dispatch:  # Manual testing
 
 jobs:
