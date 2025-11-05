@@ -2,14 +2,16 @@ name: Weather Screenshots
 
 on:
   schedule:
-    - cron: '25 * * * *'  # Runs every hour at minute 53 (UTC; adjust if needed)
-  workflow_dispatch:  # Allows manual testing
+    - cron: '30 * * * *'  # Your buffered cron
+  workflow_dispatch:  # Manual testing
 
 jobs:
   capture:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # This grants GITHUB_TOKEN permission to create releases/tags
     steps:
-    - uses: actions/checkout@v4  # Downloads your repo code
+    - uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -34,14 +36,14 @@ jobs:
     - name: Create GitHub Release with Screenshots
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: hourly-run-${{ github.run_number }}  # Unique tag per run (e.g., hourly-run-5)
-        name: Screenshots - ${{ github.run_number }} (${{ github.run_id }})  # Release title with run info
+        tag_name: hourly-run-${{ github.run_number }}
+        name: Screenshots - ${{ github.run_number }} (${{ github.run_id }})
         body: |
           Hourly weather screenshots captured at :53/:03 UTC.
           - Wunderground: [link to image]
           - NWS OBS: [link to image]
         draft: false
         prerelease: false
-        files: screenshots/*.png  # Attaches both PNGs to the release
+        files: screenshots/*.png
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Built-in, no setup needed
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
